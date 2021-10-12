@@ -22,14 +22,14 @@ namespace UserManagement_Service.Controllers
             _configuration = configuration;
         }
 
-        [HttpGet("getProfile")]
-        public IActionResult GetUserProfile([FromQuery] string emailId)
+        [HttpGet("getProfileByEmail")]
+        public IActionResult GetUserProfileByEmail([FromQuery] string emailId)
         {
             if (string.IsNullOrWhiteSpace(emailId))
             {
                 return BadRequest(new Exception("Email Id is empty"));
             }
-            string query = " select UserName, UserEmailId, Age, PhoneNumber,badgeIds,genres from usr_mgmt.UserInfo where UserEmailId like @emailId and inUse = @inUse";
+            string query = " select UserName, UserEmailId, Age, PhoneNumber,badgeIds,trophyIds,genres from usr_mgmt.UserInfo where UserEmailId like @emailId and inUse = @inUse";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration["DbReadConnectionString"].ToString();
             MySqlDataReader myReader;
@@ -50,10 +50,38 @@ namespace UserManagement_Service.Controllers
             return Ok(table);
         }
 
+        [HttpGet("getProfileByUserName")]
+        public IActionResult GetUserProfileByUserName([FromQuery] string userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                return BadRequest(new Exception("username is empty"));
+            }
+            string query = " select UserName, UserEmailId, Age, PhoneNumber,badgeIds,trophyIds,genres from usr_mgmt.UserInfo where UserName like @UserName and inUse = @inUse";
+            DataTable table = new DataTable();
+            string sqlDataSource = _configuration["DbReadConnectionString"].ToString();
+            MySqlDataReader myReader;
+            using (MySqlConnection mycon = new MySqlConnection(sqlDataSource))
+            {
+                mycon.Open();
+                using (MySqlCommand myCommand = new MySqlCommand(query, mycon))
+                {
+                    myCommand.Parameters.AddWithValue("@UserName", userName);
+                    myCommand.Parameters.AddWithValue("@inUse", 1);
+                    myReader = myCommand.ExecuteReader();
+                    table.Load(myReader);
+
+                    myReader.Close();
+                    mycon.Close();
+                }
+            }
+            return Ok(table);
+        }
+
         [HttpPost("addProfile")]
         public IActionResult AddUserProfile(UserInfo user)
         {
-            if (string.IsNullOrWhiteSpace(user.UserEmailAddress) || string.IsNullOrWhiteSpace(user.UserName))
+            if (string.IsNullOrWhiteSpace(user.UserEmailId) || string.IsNullOrWhiteSpace(user.UserName))
             {
                 return BadRequest(new Exception("Email Id or Username is empty"));
             }
@@ -67,7 +95,7 @@ namespace UserManagement_Service.Controllers
                 using (MySqlCommand myCommand = new MySqlCommand(query, mycon))
                 {
                     myCommand.Parameters.AddWithValue("@userName",user.UserName);
-                    myCommand.Parameters.AddWithValue("@emailId", user.UserEmailAddress);
+                    myCommand.Parameters.AddWithValue("@emailId", user.UserEmailId);
                     myCommand.Parameters.AddWithValue("@age", user.Age);
                     myCommand.Parameters.AddWithValue("@phoneNumber", user.PhoneNumber);
                     myCommand.Parameters.AddWithValue("@genres", user.Genres);
@@ -87,11 +115,11 @@ namespace UserManagement_Service.Controllers
         [HttpPut("modifyProfile")]
         public IActionResult ModifyUserProfile(UserInfo user)
         {
-            if (string.IsNullOrWhiteSpace(user.UserEmailAddress) || string.IsNullOrWhiteSpace(user.UserName))
+            if (string.IsNullOrWhiteSpace(user.UserEmailId) || string.IsNullOrWhiteSpace(user.UserName))
             {
                 return BadRequest(new Exception("Email Id or Username is empty"));
             }
-            string query = "update usr_mgmt.UserInfo SET Age = @age,PhoneNumber = @phoneNumber, genres = @genres, badgeIds = @badgeIds, updt_ts= @updateTS ,updt_user = @updateUser where UserEmailId = @emailId";
+            string query = "update usr_mgmt.UserInfo SET Age = @age,PhoneNumber = @phoneNumber, genres = @genres, updt_ts= @updateTS ,updt_user = @updateUser where UserEmailId = @emailId";
             DataTable table = new DataTable();
             string sqlDataSource = _configuration["DbWriteConnectionString"].ToString();
             MySqlDataReader myReader;
@@ -103,10 +131,9 @@ namespace UserManagement_Service.Controllers
                     myCommand.Parameters.AddWithValue("@age", user.Age);
                     myCommand.Parameters.AddWithValue("@phoneNumber", user.PhoneNumber);
                     myCommand.Parameters.AddWithValue("@genres", user.Genres);
-                    myCommand.Parameters.AddWithValue("@badgeIds", user.BadgeIds);
                     myCommand.Parameters.AddWithValue("@updateTS", DateTime.UtcNow);
                     myCommand.Parameters.AddWithValue("@updateUser", "User API");
-                    myCommand.Parameters.AddWithValue("@emailId", user.UserEmailAddress);
+                    myCommand.Parameters.AddWithValue("@emailId", user.UserEmailId);
                     myReader = myCommand.ExecuteReader();
                     table.Load(myReader);
 
@@ -115,6 +142,66 @@ namespace UserManagement_Service.Controllers
                 }
             }
             return Ok( user.UserName +" profile has been modified");
+        }
+
+        [HttpPut("modifyTrophyIdsProfile")]
+        public IActionResult ModifyTrophyUserProfile(UserInfo user)
+        {
+            if (string.IsNullOrWhiteSpace(user.UserEmailId) || string.IsNullOrWhiteSpace(user.UserName))
+            {
+                return BadRequest(new Exception("Email Id or Username is empty"));
+            }
+            string query = "update usr_mgmt.UserInfo SET trophyIds = @trophyIds, updt_ts= @updateTS ,updt_user = @updateUser where username like @username";
+            DataTable table = new DataTable();
+            string sqlDataSource = _configuration["DbWriteConnectionString"].ToString();
+            MySqlDataReader myReader;
+            using (MySqlConnection mycon = new MySqlConnection(sqlDataSource))
+            {
+                mycon.Open();
+                using (MySqlCommand myCommand = new MySqlCommand(query, mycon))
+                {
+                    myCommand.Parameters.AddWithValue("@trophyIds", user.TrophyIds);
+                    myCommand.Parameters.AddWithValue("@updateTS", DateTime.UtcNow);
+                    myCommand.Parameters.AddWithValue("@updateUser", "User API");
+                    myCommand.Parameters.AddWithValue("@username", user.UserName);
+                    myReader = myCommand.ExecuteReader();
+                    table.Load(myReader);
+
+                    myReader.Close();
+                    mycon.Close();
+                }
+            }
+            return Ok(user.UserName + " profile has been modified");
+        }
+
+        [HttpPut("modifyBadgeIdsProfile")]
+        public IActionResult ModifyBadgeUserProfile(UserInfo user)
+        {
+            if (string.IsNullOrWhiteSpace(user.UserEmailId) || string.IsNullOrWhiteSpace(user.UserName))
+            {
+                return BadRequest(new Exception("Email Id or Username is empty"));
+            }
+            string query = "update usr_mgmt.UserInfo SET badgeIds = @badgeIds, updt_ts= @updateTS ,updt_user = @updateUser where username like @username";
+            DataTable table = new DataTable();
+            string sqlDataSource = _configuration["DbWriteConnectionString"].ToString();
+            MySqlDataReader myReader;
+            using (MySqlConnection mycon = new MySqlConnection(sqlDataSource))
+            {
+                mycon.Open();
+                using (MySqlCommand myCommand = new MySqlCommand(query, mycon))
+                {
+                    myCommand.Parameters.AddWithValue("@badgeIds", user.BadgeIds);
+                    myCommand.Parameters.AddWithValue("@updateTS", DateTime.UtcNow);
+                    myCommand.Parameters.AddWithValue("@updateUser", "User API");
+                    myCommand.Parameters.AddWithValue("@username", user.UserName);
+                    myReader = myCommand.ExecuteReader();
+                    table.Load(myReader);
+
+                    myReader.Close();
+                    mycon.Close();
+                }
+            }
+            return Ok(user.UserName + " profile has been modified");
         }
 
         [HttpDelete("deleteProfile")]

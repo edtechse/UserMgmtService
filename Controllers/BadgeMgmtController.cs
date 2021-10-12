@@ -44,6 +44,28 @@ namespace UserManagement_Service.Controllers
             return Ok(table);
         }
 
+        [HttpGet("getBadgeList")]
+        public IActionResult GetBadgeById([FromQuery] string badgeId)
+        {
+            string query = " select BadgeName, BadgeDescription from usr_mgmt.BadgeInfo";
+            DataTable table = new DataTable();
+            string sqlDataSource = _configuration["DbReadConnectionString"].ToString();
+            MySqlDataReader myReader;
+            using (MySqlConnection mycon = new MySqlConnection(sqlDataSource))
+            {
+                mycon.Open();
+                using (MySqlCommand myCommand = new MySqlCommand(query, mycon))
+                {
+                    myReader = myCommand.ExecuteReader();
+                    table.Load(myReader);
+
+                    myReader.Close();
+                    mycon.Close();
+                }
+            }
+            return Ok(table);
+        }
+
         [HttpPost("addBadge")]
         public IActionResult AddBadge(Badge badge)
         {
