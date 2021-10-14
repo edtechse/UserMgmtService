@@ -3,7 +3,6 @@
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
 WORKDIR /app
 EXPOSE 80
-EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
@@ -30,7 +29,7 @@ COPY ["UserManagement-Service.csproj", ""]
 RUN dotnet restore "./UserManagement-Service.csproj"
 COPY . .
 WORKDIR "/src/."
-
+RUN dotnet build "UserManagement-Service.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "UserManagement-Service.csproj" -c Release -o /app/publish
 
