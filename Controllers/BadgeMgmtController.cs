@@ -44,7 +44,7 @@ namespace UserManagement_Service.Controllers
             return Ok(table);
         }
 
-        [HttpGet("getBadgeList")]
+        [HttpGet("getBadgeListById")]
         public IActionResult GetBadgeById([FromQuery] string badgeId)
         {
             string query = " select BadgeName, BadgeDescription from usr_mgmt.BadgeInfo";
